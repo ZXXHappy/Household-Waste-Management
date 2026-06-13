@@ -3,7 +3,19 @@ import { createRouter, createWebHistory } from 'vue-router'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    // 目前前端页面尚未动工，此处留空，防止编译报错
+
+    { path: '/', redirect: '/login' },
+    {
+      path: '/front',
+      component: () => import('@/views/Front.vue'),
+      children: [
+        { path: 'home', component: () => import('@/views/front/Home.vue'),  },
+      ]
+    },
+    { path: '/login', component: () => import('@/views/Login.vue') },
+    { path: '/register', component: () => import('@/views/Register.vue') },
+    { path: '/404', component: () => import('@/views/404.vue') },
+    { path: '/:pathMatch(.*)', redirect: '/404' }
   ]
 })
 
