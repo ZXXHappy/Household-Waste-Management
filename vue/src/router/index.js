@@ -10,6 +10,8 @@ const router = createRouter({
       component: () => import('@/views/Front.vue'),
       children: [
         { path: 'home', component: () => import('@/views/front/Home.vue'),  },
+        { path: 'feedback', component: () => import('@/views/front/Feedback.vue'),  },
+        { path: 'notice', component: () => import('@/views/front/Notice.vue'),  },
       ]
     },
     { path: '/login', component: () => import('@/views/Login.vue') },
