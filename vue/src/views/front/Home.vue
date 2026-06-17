@@ -13,7 +13,9 @@
     <div class="type-selection">
       <div class="type-container">
         <div class="type-item" :class="{'type-item-active' : data.currentId === item.id }"
-             v-for="item in data.typeList" :key="item.id" @click="changeType(item.id)">{{ item.name }}</div>
+             v-for="item in data.typeList" :key="item.id" @click="changeType(item.id)">
+          {{ item.name }}
+        </div>
       </div>
     </div>
 
@@ -25,95 +27,66 @@
 
     <div class="content-cards">
       <el-row :gutter="30">
-       <el-col :span="6" v-for="item in data.tableData" :key="item.id">
-         <div class="card content-card gradient-card" @click="router.push('/front/popularizeDetail?id=' + item.id)">
-           <div class="card-badge">推荐</div>
-           <div class="img-container">
-             <img :src="item.img" alt="" class="card-image">
-           </div>
-           <div class="card-content">
-             <div class="card-title">{{ item.title }}</div>
-             <div class="card-footer">
-               <div class="card-date">{{ formatDate(item.createTime) }}</div>
-               <div class="card-actions">
-                 <i class="el-icon-view"></i>
-               </div>
-             </div>
-           </div>
-         </div>
-       </el-col>
+        <el-col :span="6" v-for="item in data.tableData" :key="item.id">
+          <div class="card content-card gradient-card" @click="router.push('/front/popularizeDetail?id=' + item.id)">
+            <div class="card-badge">推荐</div>
+            <div class="img-container">
+              <img :src="item.img" alt="" class="card-image">
+            </div>
+            <div class="card-content">
+              <div class="card-title">{{ item.title }}</div>
+              <div class="card-footer">
+                <div class="card-date">{{ item.createTime }}</div>
+              </div>
+            </div>
+          </div>
+        </el-col>
       </el-row>
 
       <div class="pagination-container" v-if="data.total">
-        <el-pagination 
-          @current-change="loadPopularize" 
-          background 
-          layout="total, prev, pager, next" 
-          :page-size="data.pageSize" 
-          v-model:current-page="data.pageNum" 
-          :total="data.total" />
+        <el-pagination
+            background
+            layout="total, prev, pager, next"
+            :page-size="data.pageSize"
+            v-model:current-page="data.pageNum"
+            :total="data.total" />
       </div>
     </div>
-    
   </div>
 </template>
 
 <script setup>
-import { reactive } from "vue";
-import request from "@/utils/request.js";
-import {ElMessage} from "element-plus";
+import { reactive, onMounted } from "vue";
 import router from "@/router/index.js";
 
 const data = reactive({
-  typeList: [],
-  currentId: 0,
-  tableData: [],
+  // 模拟分类数据
+  typeList: [
+    { id: 1, name: '垃圾分类', img: 'https://picsum.photos/1200/400?1' },
+    { id: 2, name: '环保知识', img: 'https://picsum.photos/1200/400?2' },
+    { id: 3, name: '低碳生活', img: 'https://picsum.photos/1200/400?3' }
+  ],
+  currentId: 1,
+  // 模拟列表数据
+  tableData: [
+    { id: 1, title: '如何正确区分干湿垃圾？', img: 'https://picsum.photos/400/300?1', createTime: '2026-06-17' },
+    { id: 2, title: '减少塑料使用的小窍门', img: 'https://picsum.photos/400/300?2', createTime: '2026-06-16' },
+    { id: 3, title: '变废为宝：旧物改造指南', img: 'https://picsum.photos/400/300?3', createTime: '2026-06-15' }
+  ],
   pageNum: 1,
   pageSize: 10,
-  total: 0,
+  total: 3,
 })
-
-const changeItem = (id) => {
-  data.currentId = id
-  loadPopularize()
-}
-
-// 加载宣传分类和宣传列表
-request.get('/popularizeType/selectAll').then(res => {
-  data.typeList = res.data
-  data.currentId = data.typeList?.length ? data.typeList[0].id : 0
-  loadPopularize()
-})
-
-const loadPopularize = () => {
-  request.get('/popularize/selectPage', {
-    params: {
-      pageNum: data.pageNum,
-      pageSize: data.pageSize,
-      typeId: data.currentId
-    }
-  }).then(res => {
-    if (res.code === '200') {
-      data.tableData = res.data?.list || []
-      data.total = res.data?.total
-    } else {
-      ElMessage.error(res.msg)
-    }
-  })
-}
 
 const changeType = (typeId) => {
   data.currentId = typeId
-  loadPopularize()
+  // 这里可以写模拟过滤逻辑
 }
 
-const formatDate = (dateStr) => {
-  if (!dateStr) return '';
-  const date = new Date(dateStr);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+const changeItem = (id) => {
+  data.currentId = id
 }
 </script>
-
 <style scoped>
 .home-carousel {
   border-radius: 20px;
