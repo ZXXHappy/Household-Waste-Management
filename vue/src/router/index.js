@@ -10,7 +10,7 @@ const router = createRouter({
       component: () => import('@/views/Front.vue'),
       children: [
         { path: 'home', component: () => import('@/views/front/Home.vue'),  },
-        //{ path: 'person', component: () => import('@/views/front/Person.vue'),  },
+        { path: 'person', component: () => import('@/views/front/Person.vue'),  },
         { path: 'popularizeDetail', component: () => import('@/views/front/PopularizeDetail.vue'),  },
         { path: 'community', component: () => import('@/views/front/Community.vue'),  },
         { path: 'recoverySite', component: () => import('@/views/front/RecoverySite.vue'),  },
@@ -18,9 +18,9 @@ const router = createRouter({
         { path: 'myGarbageLaunch', component: () => import('@/views/front/MyGarbageLaunch.vue'),  },
         { path: 'notice', component: () => import('@/views/front/Notice.vue'),  },
         { path: 'scoreGoods', component: () => import('@/views/front/ScoreGoods.vue'),  },
-        //{ path: 'password', component: () => import('@/views/front/Password.vue'),  },
-       // { path: 'myScoreExchange', component: () => import('@/views/front/MyScoreExchange.vue'),  },
-       // { path: 'myRecoveryRecords', component: () => import('@/views/front/MyRecoveryRecords.vue'),  },
+        { path: 'password', component: () => import('@/views/front/Password.vue'),  },
+        { path: 'myScoreExchange', component: () => import('@/views/front/MyScoreExchange.vue'),  },
+        { path: 'myRecoveryRecords', component: () => import('@/views/front/MyRecoveryRecords.vue'),  },
         { path: 'feedback', component: () => import('@/views/front/Feedback.vue'),  },
         { path: 'myFeedback', component: () => import('@/views/front/MyFeedback.vue'),  },
       ]
