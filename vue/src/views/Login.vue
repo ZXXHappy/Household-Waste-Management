@@ -54,6 +54,13 @@ const login = () => {
     router.push('/manager/home')
   }
 }
+// 在登录逻辑或者项目启动时，写入这行数据
+localStorage.setItem('xm-user', JSON.stringify({
+  id: 1,
+  name: '测试用户',
+  role: 'USER',
+  avatar: 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png' // 随便一张图片地址
+}));
 </script>
 
 <style scoped>
