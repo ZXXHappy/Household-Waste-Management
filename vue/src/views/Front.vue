@@ -51,23 +51,25 @@
 </template>
 
 <script setup>
-import { reactive, onMounted } from "vue";
-import router from "@/router/index.js";
+  import router from "@/router/index.js";
+  import { reactive } from "vue";
+  import request from "@/utils/request.js";
 
-const data = reactive({
-  // 直接手动写入一个用户数据对象
-  user: {
-    id: 1,
-    name: '测试用户',
-    avatar: 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png' // 可以换成你本地的图片路径
+  const data = reactive({
+    user: JSON.parse(localStorage.getItem('xm-user') || '{}'),
+    top: '',
+    noticeData: []
+  })
+
+  const logout = () => {
+    localStorage.removeItem('xm-user')
+    router.push('/login')
   }
-})
 
-// 确保页面加载时数据是生效的
-onMounted(() => {
-  // 也可以在这里同步更新 localStorage，保证其他页面也能读到
-  localStorage.setItem('xm-user', JSON.stringify(data.user));
-})
+  const updateUser = () => {
+    data.user =  JSON.parse(localStorage.getItem('xm-user') || '{}')
+  }
+
 </script>
 
 <style scoped>
