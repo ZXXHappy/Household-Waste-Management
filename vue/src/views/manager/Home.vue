@@ -29,7 +29,7 @@
         </div>
       </div>
     </div>
-
+    
     <el-row :gutter="20" class="dashboard-row">
       <el-col :xs="24" :sm="24" :md="12">
         <div class="card notice-card">
@@ -53,7 +53,7 @@
           </div>
         </div>
       </el-col>
-
+      
       <el-col :xs="24" :sm="24" :md="12">
         <div class="card quick-card">
           <div class="card-header">
@@ -85,21 +85,16 @@
 </template>
 
 <script setup>
-import { reactive } from "vue";
+import { reactive, ref } from "vue";
+import request from "@/utils/request.js";
+import { ElMessage } from "element-plus";
 import { User, Bell, Menu, Clock, Calendar, House, Location, Lock } from "@element-plus/icons-vue";
 import router from "@/router/index.js";
 
-// ✅ 静态假数据，不再请求后端
 const data = reactive({
-  user: {
-    name: '管理员',
-    avatar: ''
-  },
-  noticeData: [
-    { time: '2026-06-18 10:00', content: '平台正式上线，欢迎使用生活垃圾管理系统！' },
-    { time: '2026-06-15 09:00', content: '请各社区管理员及时录入回收点信息。' },
-    { time: '2026-06-10 08:30', content: '积分兑换功能已开放，用户可凭积分兑换物品。' },
-  ]
+  user: JSON.parse(localStorage.getItem('xm-user') || '{}'),
+  noticeData: [],
+  loading: false
 })
 
 const getCurrentTime = () => {
@@ -125,6 +120,22 @@ const getTimelineItemType = (index) => {
 const navigateTo = (path) => {
   router.push(path);
 }
+
+const loadNotice = () => {
+  data.loading = true;
+  request.get('/notice/selectAll').then(res => {
+    data.loading = false;
+    if (res.code === '200') {
+      data.noticeData = res.data;
+    } else {
+      ElMessage.error(res.msg);
+    }
+  }).catch(() => {
+    data.loading = false;
+  });
+}
+
+loadNotice();
 </script>
 
 <style scoped>
@@ -295,7 +306,7 @@ const navigateTo = (path) => {
     width: 100%;
     justify-content: space-around;
   }
-
+  
   .quick-links {
     grid-template-columns: 1fr;
   }
