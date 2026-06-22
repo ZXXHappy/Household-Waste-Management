@@ -72,18 +72,20 @@ const data = reactive({
   }
 })
 
-
 const updatePassword = () => {
   formRef.value.validate(valid => {
     if (valid) {
-      // 模拟后端返回成功
-      ElMessage.success('密码修改成功，请重新登录')
-      logout()
+      request.put('/updatePassword', data.user).then(res => {
+        if (res.code === '200') {
+          ElMessage.success('密码修改成功，请重新登录')
+          logout()
+        } else {
+          ElMessage.error(res.msg)
+        }
+      })
     }
   })
 }
-
-// 保持 logout 函数不变，它会清理本地缓存并跳转到登录页
 
 const logout = () => {
   localStorage.removeItem('xm-user')

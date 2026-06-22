@@ -50,23 +50,37 @@ import {Delete, Edit} from "@element-plus/icons-vue";
 
 const data = reactive({
   user: JSON.parse(localStorage.getItem('xm-user') || '{}'),
-  tableData: [
-    { id: 1, communityName: '幸福花园社区', siteName: 'A区智能回收站', type: '厨余垃圾', img: 'https://picsum.photos/100/80?1', time: '2026-06-18 09:30' },
-    { id: 2, communityName: '幸福花园社区', siteName: 'B区集中投放点', type: '干垃圾', img: 'https://picsum.photos/100/80?2', time: '2026-06-17 14:20' }
-  ],
-  total: 2,
+  formVisible: false,
+  form: {},
+  tableData: [],
+  pageNum: 1,
+  pageSize: 10,
+  total: 0,
   communityName: null,
   ids: []
 })
 
-
-const load = () => { console.log("加载模拟数据..."); }
 const baseUrl = import.meta.env.VITE_BASE_URL
 const handleFileUpload = (res) => {
   data.form.img = res.data
 }
 
-
+const load = () => {
+  request.get('/garbageLaunch/selectPage', {
+    params: {
+      pageNum: data.pageNum,
+      pageSize: data.pageSize,
+      communityName: data.communityName
+    }
+  }).then(res => {
+    if (res.code === '200') {
+      data.tableData = res.data?.list || []
+      data.total = res.data?.total
+    } else {
+      ElMessage.error(res.msg)
+    }
+  })
+}
 const handleAdd = () => {
   data.form = {}
   data.formVisible = true

@@ -60,26 +60,30 @@ import { Plus } from '@element-plus/icons-vue';
 
 const baseUrl = import.meta.env.VITE_BASE_URL
 
-
-// 修改 script setup 部分
 const data = reactive({
-  // 保持从缓存读取，或者直接赋初值
   user: JSON.parse(localStorage.getItem('xm-user') || '{}')
 })
 
-// 移除 request.get('/user/selectById/...') 这段代码
-
-const update = () => {
-  // 模拟保存成功
-  ElMessage.success('个人信息保存成功')
-  localStorage.setItem('xm-user', JSON.stringify(data.user))
-  // emit('updateUser') // 如果有父组件监听，保留此行
+const handleFileUpload = (res) => {
+  data.user.avatar = res.data
 }
 
-// 移除 handleFileUpload 中的后端上传逻辑（如果要实现完全静态，可以不做处理，或者留空）
-const handleFileUpload = (res) => {
-  // res.data 是上传后的后端返回路径，没后端时直接用原图或设置一个假的URL
-  data.user.avatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
+// 更新用户最新的积分
+request.get('/user/selectById/' + data.user.id).then(res=> {
+  data.user.score = res.data.score
+})
+
+const emit = defineEmits(['updateUser'])
+const update = () => {
+  request.put('/user/update', data.user).then(res => {
+    if (res.code === '200') {
+      ElMessage.success('保存成功')
+      localStorage.setItem('xm-user', JSON.stringify(data.user))
+      emit('updateUser')
+    } else {
+      ElMessage.error(res.msg)
+    }
+  })
 }
 </script>
 

@@ -6,11 +6,11 @@
         <div style="flex: 1">
           <el-button type="danger" plain @click="delBatch">批量删除</el-button>
         </div>
-        <div>
-          <el-input v-model="data.title" prefix-icon="Search" style="width: 240px; margin-right: 10px" placeholder="请输入反馈标题查询"></el-input>
-          <el-button type="info" plain @click="load">查询</el-button>
-          <el-button type="warning" plain style="margin: 0 10px" @click="reset">重置</el-button>
-        </div>
+       <div>
+         <el-input v-model="data.title" prefix-icon="Search" style="width: 240px; margin-right: 10px" placeholder="请输入反馈标题查询"></el-input>
+         <el-button type="info" plain @click="load">查询</el-button>
+         <el-button type="warning" plain style="margin: 0 10px" @click="reset">重置</el-button>
+       </div>
       </div>
 
       <div style="margin-bottom: 20px">
@@ -74,29 +74,50 @@ import {ElMessage, ElMessageBox} from "element-plus";
 import {Delete, Edit} from "@element-plus/icons-vue";
 
 const formRef = ref()
-
-// 修改 data 部分
 const data = reactive({
   user: JSON.parse(localStorage.getItem('xm-user') || '{}'),
   formVisible: false,
   form: {},
-  tableData: [
-    { id: 1, userName: '测试用户', title: '投放点建议', idea: '增加更多智能桶', content: '希望在A区增加厨余垃圾桶。', time: '2026-06-18', status: '待回复' },
-    { id: 2, userName: '测试用户', title: 'APP功能反馈', idea: '界面可以更简洁', content: '积分兑换流程有点复杂。', time: '2026-06-17', status: '已回复', replyContent: '已收到您的建议，我们会持续优化。', replyTime: '2026-06-17 10:00' }
-  ],
-  total: 2,
+  tableData: [],
+  pageNum: 1,
+  pageSize: 10,
+  total: 0,
   title: null,
-  ids: []
+  ids: [],
+  rules: {
+    title: [
+      { required: true, message: '请输入反馈标题', trigger: 'blur' }
+    ],
+    content: [
+      { required: true, message: '请输入反馈内容', trigger: 'blur' }
+    ],
+    idea: [
+      { required: true, message: '请输入您的想法', trigger: 'blur' }
+    ]
+  }
 })
 
-// load 方法改为空函数，并删除文件最底部的 load() 调用
-const load = () => { console.log("加载模拟数据..."); }
 const baseUrl = import.meta.env.VITE_BASE_URL
 const handleFileUpload = (res) => {
   data.form.img = res.data
 }
 
-
+const load = () => {
+  request.get('/feedback/selectPage', {
+    params: {
+      pageNum: data.pageNum,
+      pageSize: data.pageSize,
+      title: data.title
+    }
+  }).then(res => {
+    if (res.code === '200') {
+      data.tableData = res.data?.list || []
+      data.total = res.data?.total
+    } else {
+      ElMessage.error(res.msg)
+    }
+  })
+}
 const handleAdd = () => {
   data.form = {}
   data.formVisible = true
