@@ -29,7 +29,7 @@
         </div>
       </div>
     </div>
-    
+
     <el-row :gutter="20" class="dashboard-row">
       <el-col :xs="24" :sm="24" :md="12">
         <div class="card notice-card">
@@ -39,11 +39,11 @@
           </div>
           <el-timeline v-if="data.noticeData.length">
             <el-timeline-item
-              v-for="(item, index) in data.noticeData"
-              :key="index"
-              :timestamp="item.time"
-              :type="getTimelineItemType(index)"
-              :hollow="index % 2 === 0"
+                v-for="(item, index) in data.noticeData"
+                :key="index"
+                :timestamp="item.time"
+                :type="getTimelineItemType(index)"
+                :hollow="index % 2 === 0"
             >
               <div class="notice-content">{{ item.content }}</div>
             </el-timeline-item>
@@ -53,7 +53,7 @@
           </div>
         </div>
       </el-col>
-      
+
       <el-col :xs="24" :sm="24" :md="12">
         <div class="card quick-card">
           <div class="card-header">
@@ -306,7 +306,7 @@ loadNotice();
     width: 100%;
     justify-content: space-around;
   }
-  
+
   .quick-links {
     grid-template-columns: 1fr;
   }

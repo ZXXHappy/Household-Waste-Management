@@ -16,13 +16,8 @@
         <el-table-column prop="username" label="账号" />
         <el-table-column prop="avatar" label="头像">
           <template v-slot="scope">
-            <el-image
-              style="width: 40px; height: 40px; border-radius: 50%; display: block"
-              v-if="scope.row.avatar"
-              :src="scope.row.avatar"
-              :preview-src-list="[scope.row.avatar]"
-              preview-teleported
-            ></el-image>
+            <el-image style="width: 40px; height: 40px; border-radius: 50%; display: block" v-if="scope.row.avatar"
+                      :src="scope.row.avatar" :preview-src-list="[scope.row.avatar]" preview-teleported></el-image>
           </template>
         </el-table-column>
         <el-table-column prop="name" label="姓名" />
@@ -38,21 +33,23 @@
         </el-table-column>
       </el-table>
     </div>
-
     <div class="card" v-if="data.total">
-      <el-pagination
-        background
-        layout="total, prev, pager, next"
-        :page-size="data.pageSize"
-        v-model:current-page="data.pageNum"
-        :total="data.total"
-      />
+      <el-pagination @current-change="load" background layout="total, prev, pager, next" :page-size="data.pageSize" v-model:current-page="data.pageNum" :total="data.total" />
     </div>
 
     <el-dialog title="普通用户信息" v-model="data.formVisible" width="40%" destroy-on-close>
       <el-form ref="form" :model="data.form" label-width="70px" style="padding: 20px">
         <el-form-item prop="username" label="用户名">
           <el-input v-model="data.form.username" placeholder="请输入用户名"></el-input>
+        </el-form-item>
+        <el-form-item prop="avatar" label="头像">
+          <el-upload
+              :action="baseUrl + '/files/upload'"
+              :on-success="handleFileUpload"
+              list-type="picture"
+          >
+            <el-button type="primary">点击上传</el-button>
+          </el-upload>
         </el-form-item>
         <el-form-item prop="name" label="姓名">
           <el-input v-model="data.form.name" placeholder="请输入姓名"></el-input>
@@ -78,38 +75,115 @@
 </template>
 
 <script setup>
-import { reactive } from "vue";
-import { ElMessage, ElMessageBox } from "element-plus";
-import { Delete, Edit } from "@element-plus/icons-vue";
 
-// ✅ 静态假数据
-const allData = [
-  { id: 1, username: 'zhangsan', name: '张三', role: 'USER', phone: '13800001111', email: 'zhangsan@qq.com', score: 120, avatar: '' },
-  { id: 2, username: 'lisi',     name: '李四', role: 'USER', phone: '13800002222', email: 'lisi@qq.com',     score: 85,  avatar: '' },
-  { id: 3, username: 'wangwu',   name: '王五', role: 'USER', phone: '13800003333', email: 'wangwu@qq.com',   score: 200, avatar: '' },
-  { id: 4, username: 'zhaoliu',  name: '赵六', role: 'USER', phone: '13800004444', email: 'zhaoliu@qq.com',  score: 50,  avatar: '' },
-  { id: 5, username: 'sunqi',    name: '孙七', role: 'USER', phone: '13800005555', email: 'sunqi@qq.com',    score: 310, avatar: '' },
-]
+import {reactive} from "vue";
+import request from "@/utils/request.js";
+import {ElMessage, ElMessageBox} from "element-plus";
+import {Delete, Edit} from "@element-plus/icons-vue";
+
+const baseUrl = import.meta.env.VITE_BASE_URL
 
 const data = reactive({
   formVisible: false,
   form: {},
-  tableData: [...allData],
+  tableData: [],
   pageNum: 1,
   pageSize: 10,
-  total: allData.length,
+  total: 0,
   name: null,
   ids: []
 })
 
-// ✅ 查询（在假数据里过滤）
 const load = () => {
-  if (data.name) {
-    data.tableData = allData.filter(item => item.name.includes(data.name))
-  } else {
-    data.tableData = [...allData]
+  request.get('/user/selectPage', {
+    params: {
+      pageNum: data.pageNum,
+      pageSize: data.pageSize,
+      name: data.name
+    }
+  }).then(res => {
+    if (res.code === '200') {
+      data.tableData = res.data?.list || []
+      data.total = res.data?.total
+    } else {
+      ElMessage.error(res.msg)
+    }
+  })
+}
+const handleAdd = () => {
+  data.form = {}
+  data.formVisible = true
+}
+const handleEdit = (row) => {
+  data.form = JSON.parse(JSON.stringify(row))
+  data.formVisible = true
+}
+const add = () => {
+  request.post('/user/add', data.form).then(res => {
+    if (res.code === '200') {
+      ElMessage.success('操作成功')
+      data.formVisible = false
+      load()
+    } else {
+      ElMessage.error(res.msg)
+    }
+  })
+}
+
+const update = () => {
+  request.put('/user/update', data.form).then(res => {
+    if (res.code === '200') {
+      ElMessage.success('操作成功')
+      data.formVisible = false
+      load()
+    } else {
+      ElMessage.error(res.msg)
+    }
+  })
+}
+
+const save = () => {
+  data.form.id ? update() : add()
+}
+
+const del = (id) => {
+  ElMessageBox.confirm('删除后数据无法恢复，您确定删除吗？', '删除确认', { type: 'warning' }).then(res => {
+    request.delete('/user/delete/' + id).then(res => {
+      if (res.code === '200') {
+        ElMessage.success("删除成功")
+        load()
+      } else {
+        ElMessage.error(res.msg)
+      }
+    })
+  }).catch(err => {
+    console.error(err)
+  })
+}
+const delBatch = () => {
+  if (!data.ids.length) {
+    ElMessage.warning("请选择数据")
+    return
   }
-  data.total = data.tableData.length
+  ElMessageBox.confirm('删除后数据无法恢复，您确定删除吗？', '删除确认', { type: 'warning' }).then(res => {
+    request.delete("/user/delete/batch", {data: data.ids}).then(res => {
+      if (res.code === '200') {
+        ElMessage.success('操作成功')
+        load()
+      } else {
+        ElMessage.error(res.msg)
+      }
+    })
+  }).catch(err => {
+    console.error(err)
+  })
+}
+const handleSelectionChange = (rows) => {
+  data.ids = rows.map(v => v.id)
+}
+
+const handleFileUpload = (res) => {
+  data.form.avatar = res.data
 }
 
 const reset = () => {
@@ -117,61 +191,5 @@ const reset = () => {
   load()
 }
 
-const handleAdd = () => {
-  data.form = {}
-  data.formVisible = true
-}
-
-const handleEdit = (row) => {
-  data.form = JSON.parse(JSON.stringify(row))
-  data.formVisible = true
-}
-
-// ✅ 保存（只操作本地数据）
-const save = () => {
-  if (data.form.id) {
-    const index = data.tableData.findIndex(item => item.id === data.form.id)
-    if (index !== -1) data.tableData[index] = { ...data.form }
-    ElMessage.success('修改成功')
-  } else {
-    data.tableData.push({ ...data.form, id: Date.now(), role: 'USER', score: 0, avatar: '' })
-    data.total = data.tableData.length
-    ElMessage.success('新增成功')
-  }
-  data.formVisible = false
-}
-
-// ✅ 删除（只操作本地数据）
-const del = (id) => {
-  ElMessageBox.confirm('删除后数据无法恢复，您确定删除吗？', '删除确认', {
-    type: 'warning',
-    confirmButtonText: '确认删除',
-    cancelButtonText: '取消'
-  }).then(() => {
-    data.tableData = data.tableData.filter(item => item.id !== id)
-    data.total = data.tableData.length
-    ElMessage.success('删除成功')
-  }).catch(() => {})
-}
-
-const delBatch = () => {
-  if (!data.ids.length) {
-    ElMessage.warning('请选择数据')
-    return
-  }
-  ElMessageBox.confirm('删除后数据无法恢复，您确定删除吗？', '删除确认', {
-    type: 'warning',
-    confirmButtonText: '确认删除',
-    cancelButtonText: '取消'
-  }).then(() => {
-    data.tableData = data.tableData.filter(item => !data.ids.includes(item.id))
-    data.total = data.tableData.length
-    data.ids = []
-    ElMessage.success('删除成功')
-  }).catch(() => {})
-}
-
-const handleSelectionChange = (rows) => {
-  data.ids = rows.map(v => v.id)
-}
+load()
 </script>
