@@ -101,17 +101,20 @@ import request from "@/utils/request.js";
 import {ElMessage, ElMessageBox} from "element-plus";
 import { Search, RefreshRight, GoldMedal } from '@element-plus/icons-vue';
 
+// 修改 data 部分
 const data = reactive({
   user: JSON.parse(localStorage.getItem('xm-user') || '{}'),
-  formVisible: false,
-  form: {},
-  tableData: [],
-  pageNum: 1,
-  pageSize: 10,
-  total: 0,
+  tableData: [
+    { id: 1, garbageName: '塑料瓶', img: 'https://picsum.photos/100/80?1', communityName: '幸福花园社区', siteName: 'A区回收站', num: 10, score: 20, time: '2026-06-18', status: '待审核' },
+    { id: 2, garbageName: '旧报纸', img: 'https://picsum.photos/100/80?2', communityName: '幸福花园社区', siteName: 'B区回收站', num: 5, score: 25, time: '2026-06-17', status: '通过', remark: '已完成回收' }
+  ],
+  total: 2,
   siteName: null,
   ids: []
 })
+
+// load 方法改为空函数，并删除文件最底部的 load() 调用
+const load = () => { console.log("加载模拟数据..."); }
 
 const tableRowClassName = ({ row }) => {
   if (row.status === '通过') {
@@ -127,22 +130,6 @@ const handleFileUpload = (res) => {
   data.form.img = res.data
 }
 
-const load = () => {
-  request.get('/recoveryRecords/selectPage', {
-    params: {
-      pageNum: data.pageNum,
-      pageSize: data.pageSize,
-      siteName: data.siteName
-    }
-  }).then(res => {
-    if (res.code === '200') {
-      data.tableData = res.data?.list || []
-      data.total = res.data?.total
-    } else {
-      ElMessage.error(res.msg)
-    }
-  })
-}
 
 const handleSelectionChange = (rows) => {
   data.ids = rows.map(v => v.id)

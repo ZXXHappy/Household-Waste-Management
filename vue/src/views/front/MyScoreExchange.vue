@@ -51,16 +51,32 @@ import {Delete, Edit} from "@element-plus/icons-vue";
 
 
 const data = reactive({
-  // ... 其他属性
-  tableData: [
-    { id: 1, goodsName: '环保购物袋', num: 2, score: 100, receiveName: '张三', receivePhone: '13800000000', receiveAddress: '幸福花园1栋101', time: '2026-06-18', status: '待派送' },
-    { id: 2, goodsName: '不锈钢吸管', num: 1, score: 30, receiveName: '张三', receivePhone: '13800000000', receiveAddress: '幸福花园1栋101', time: '2026-06-17', status: '已签收' }
-  ],
-  total: 2
+  user: JSON.parse(localStorage.getItem('xm-user') || '{}'),
+  formVisible: false,
+  form: {},
+  tableData: [],
+  pageNum: 1,
+  pageSize: 10,
+  total: 0,
+  goodsName: null,
+  ids: []
 })
 
 const load = () => {
-
+  request.get('/scoreExchange/selectPage', {
+    params: {
+      pageNum: data.pageNum,
+      pageSize: data.pageSize,
+      goodsName: data.goodsName
+    }
+  }).then(res => {
+    if (res.code === '200') {
+      data.tableData = res.data?.list || []
+      data.total = res.data?.total
+    } else {
+      ElMessage.error(res.msg)
+    }
+  })
 }
 const handleAdd = () => {
   data.form = {}

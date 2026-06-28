@@ -50,39 +50,59 @@
                   <el-icon><ShoppingCart /></el-icon>
                   立即兑换
                 </el-button>
-              </div>
-            </div>
-          </div>
-        </el-col>
+             </div>
+           </div>
+         </div>
+       </el-col>
       </el-row>
+    </div>
+
+    <div v-if="data.total" class="pagination">
+      <el-pagination @current-change="load" background layout="total, prev, pager, next" :page-size="data.pageSize" v-model:current-page="data.pageNum" :total="data.total" />
     </div>
 
     <el-dialog title="积分兑换" v-model="data.formVisible" width="40%" destroy-on-close class="exchange-dialog">
       <div class="dialog-goods-preview">
-        <div class="preview-image"><img :src="data.goods.img" alt=""></div>
+        <div class="preview-image">
+          <img :src="data.goods.img" alt="">
+        </div>
         <div class="preview-info">
           <h3>{{ data.goods.name }}</h3>
           <p>{{ data.goods.descr }}</p>
         </div>
       </div>
-      <el-form ref="formRef" :model="data.form" label-width="110px" class="exchange-form">
-        <el-form-item label="兑换数量">
-          <el-input-number @change="calScore" style="width: 200px" :min="1" :max="data.goods.num" v-model="data.form.num"></el-input-number>
+      <el-form ref="formRef" :model="data.form" :rules="data.rules" label-width="110px" class="exchange-form">
+        <el-form-item prop="num" label="兑换数量">
+          <el-input-number @click="calScore" style="width: 200px" :min="1" :max="data.goods.num" v-model="data.form.num" placeholder="请输入兑换数量"></el-input-number>
         </el-form-item>
-        <el-form-item label="消耗积分">
+        <el-form-item prop="score" label="消耗积分">
           <b class="score-text">{{ data.form.score }}</b>
         </el-form-item>
-        <el-form-item label="接收人名称"><el-input v-model="data.form.receiveName"></el-input></el-form-item>
+        <el-form-item prop="receiveName" label="接收人名称">
+          <el-input v-model="data.form.receiveName" placeholder="请输入接收人名称" class="form-input"></el-input>
+        </el-form-item>
+        <el-form-item prop="receivePhone" label="接收人电话">
+          <el-input v-model="data.form.receivePhone" placeholder="请输入接收人电话" class="form-input"></el-input>
+        </el-form-item>
+        <el-form-item prop="receiveAddress" label="接收人地址">
+          <el-input type="textarea" :rows="3" v-model="data.form.receiveAddress" placeholder="请输入接收人地址" class="form-input"></el-input>
+        </el-form-item>
         <div class="score-balance">
           <el-icon><Trophy /></el-icon>
           <span>我的积分余额：</span>
           <b class="user-score">{{ data.userScore }}</b>
+          <div class="score-status" :class="data.form.score > data.userScore ? 'insufficient' : 'sufficient'">
+            {{ data.form.score > data.userScore ? '积分不足' : '积分充足' }}
+          </div>
         </div>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="data.formVisible = false">取 消</el-button>
-          <el-button type="primary" @click="exchange">确认兑换</el-button>
+          <el-button @click="data.formVisible = false" class="cancel-btn">取 消</el-button>
+          <el-button type="primary" @click="exchange" :disabled="data.form.score > data.userScore" class="confirm-btn">
+            <el-icon><ShoppingCartFull /></el-icon>
+            确认兑换
+          </el-button>
         </span>
       </template>
     </el-dialog>
@@ -90,44 +110,171 @@
 </template>
 
 <script setup>
-import { reactive, ref } from "vue";
-import { ElMessage } from "element-plus";
-import { Search, RefreshRight, Goods, ShoppingCart, Trophy } from '@element-plus/icons-vue';
+import {reactive, ref} from "vue";
+import request from "@/utils/request.js";
+import {ElMessage, ElMessageBox} from "element-plus";
+import {
+  Search, RefreshRight, Goods, ShoppingCart, 
+  ShoppingCartFull, Trophy
+} from '@element-plus/icons-vue';
+
+const formRef = ref()
 
 const data = reactive({
-  name: '',
-  userScore: 200, // 模拟我的积分
+  user: JSON.parse(localStorage.getItem('xm-user') || '{}'),
   formVisible: false,
+  form: {},
+  tableData: [],
+  pageNum: 1,
+  pageSize: 10,
+  total: 0,
+  name: null,
+  ids: [],
   goods: {},
-  form: { num: 1, score: 0, receiveName: '' },
-  tableData: [
-    { id: 1, name: '环保购物袋', score: 50, unit: '个', num: 10, descr: '可降解材质，耐用环保。', img: 'https://picsum.photos/300/200' },
-    { id: 2, name: '不锈钢吸管', score: 30, unit: '套', num: 3, descr: '精选不锈钢，告别塑料。', img: 'https://picsum.photos/300/201' },
-    { id: 3, name: '竹制牙刷', score: 20, unit: '支', num: 20, descr: '天然毛竹，绿色生活。', img: 'https://picsum.photos/300/202' }
-  ]
-});
+  userScore: 0,
+  rules: {
+    receiveName: [
+      { required: true, message: '请输入接收人名称', trigger: 'blur' }
+    ],
+    receivePhone: [
+      { required: true, message: '请输入接收人电话', trigger: 'blur' }
+    ],
+    receiveAddress: [
+      { required: true, message: '请输入接收人地址', trigger: 'blur' }
+    ]
+  }
+})
+
+request.get('/user/selectById/' + data.user.id).then(res => {
+  data.userScore = res.data.score
+})
 
 const calScore = () => {
-  data.form.score = data.goods.score * data.form.num;
-};
+  data.form.score = data.goods.score * data.form.num
+}
 
-const handleExchange = (item) => {
-  data.goods = item;
-  data.form = { num: 1, score: item.score };
-  data.formVisible = true;
-};
+const handleExchange = (goods) => {
+  data.goods = goods
+  data.form = { num: 1, goodsId: goods.id }
+  calScore()
+  data.formVisible = true
+}
 
 const exchange = () => {
-  if (data.form.score > data.userScore) {
-    ElMessage.error("积分不足！");
-  } else {
-    ElMessage.success("兑换成功！");
-    data.formVisible = false;
-  }
-};
+  formRef.value.validate((valid) => {
+    if (valid) {
+      request.post('/scoreExchange/add', data.form).then(res => {
+        if (res.code === '200') {
+          ElMessage.success('操作成功')
+          data.formVisible = false
+          load()
+        } else {
+          ElMessage.error(res.msg)
+        }
+      })
+    }
+  })
+}
 
-const load = () => { ElMessage.info("正在查询..."); };
-const reset = () => { data.name = ''; };
+const baseUrl = import.meta.env.VITE_BASE_URL
+const handleFileUpload = (res) => {
+  data.form.img = res.data
+}
+
+const load = () => {
+  request.get('/scoreGoods/selectPage', {
+    params: {
+      pageNum: data.pageNum,
+      pageSize: data.pageSize,
+      name: data.name
+    }
+  }).then(res => {
+    if (res.code === '200') {
+      data.tableData = res.data?.list || []
+      data.total = res.data?.total
+    } else {
+      ElMessage.error(res.msg)
+    }
+  })
+}
+const handleAdd = () => {
+  data.form = { num: 1, score: 1 }
+  data.formVisible = true
+}
+const handleEdit = (row) => {
+  data.form = JSON.parse(JSON.stringify(row))
+  data.formVisible = true
+}
+const add = () => {
+  request.post('/scoreGoods/add', data.form).then(res => {
+    if (res.code === '200') {
+      ElMessage.success('操作成功')
+      data.formVisible = false
+      load()
+    } else {
+      ElMessage.error(res.msg)
+    }
+  })
+}
+
+const update = () => {
+  request.put('/scoreGoods/update', data.form).then(res => {
+    if (res.code === '200') {
+      ElMessage.success('操作成功')
+      data.formVisible = false
+      load()
+    } else {
+      ElMessage.error(res.msg)
+    }
+  })
+}
+
+const save = () => {
+  data.form.id ? update() : add()
+}
+
+const del = (id) => {
+  ElMessageBox.confirm('删除后数据无法恢复，您确定删除吗？', '删除确认', { type: 'warning' }).then(res => {
+    request.delete('/scoreGoods/delete/' + id).then(res => {
+      if (res.code === '200') {
+        ElMessage.success("删除成功")
+        load()
+      } else {
+        ElMessage.error(res.msg)
+      }
+    })
+  }).catch(err => {
+    console.error(err)
+  })
+}
+const delBatch = () => {
+  if (!data.ids.length) {
+    ElMessage.warning("请选择数据")
+    return
+  }
+  ElMessageBox.confirm('删除后数据无法恢复，您确定删除吗？', '删除确认', { type: 'warning' }).then(res => {
+    request.delete("/scoreGoods/delete/batch", {data: data.ids}).then(res => {
+      if (res.code === '200') {
+        ElMessage.success('操作成功')
+        load()
+      } else {
+        ElMessage.error(res.msg)
+      }
+    })
+  }).catch(err => {
+    console.error(err)
+  })
+}
+const handleSelectionChange = (rows) => {
+  data.ids = rows.map(v => v.id)
+}
+
+const reset = () => {
+  data.name = null
+  load()
+}
+
+load()
 </script>
 
 <style scoped>

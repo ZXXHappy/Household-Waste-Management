@@ -5,11 +5,11 @@
       <div class="title-underline"></div>
       <p class="section-description">选择合适的回收点进行垃圾投放或回收申请</p>
     </div>
-
+    
     <div class="recovery-sites-container">
       <el-row :gutter="30">
         <el-col :xs="24" :sm="12" :md="8" v-for="item in data.tableData" :key="item.id">
-          <div class="card site-card">
+          <div @click="router.push('/front/recoverySiteDetail?id=' + item.id)" class="card site-card">
             <div class="site-img-container">
               <img :src="item.img" alt="" class="site-image">
               <div class="site-status" :class="item.status === '运行中' ? 'status-running' : 'status-closed'">
@@ -21,11 +21,19 @@
                 <el-icon class="icon"><Place /></el-icon>
                 {{ item.name }}
               </h3>
-              <div class="info-row"><el-icon class="icon"><User /></el-icon><span>负责人：{{ item.managerName }}</span></div>
-              <div class="info-row"><el-icon class="icon"><Iphone /></el-icon><span>联系方式：{{ item.managerPhone }}</span></div>
-              <div class="info-row"><el-icon class="icon"><Clock /></el-icon><span>开放时间：{{ item.timeRange }}</span></div>
-
-              <el-button type="primary" class="view-details-btn" @click="goToDetail(item.id)">
+              <div class="info-row">
+                <el-icon class="icon"><User /></el-icon>
+                <span>负责人：{{ item.managerName }}</span>
+              </div>
+              <div class="info-row">
+                <el-icon class="icon"><Iphone /></el-icon>
+                <span>联系方式：{{ item.managerPhone }}</span>
+              </div>
+              <div class="info-row">
+                <el-icon class="icon"><Clock /></el-icon>
+                <span>开放时间：{{ item.timeRange }}</span>
+              </div>
+              <el-button type="primary" class="view-details-btn">
                 <el-icon><ArrowRight /></el-icon>
                 查看详情
               </el-button>
@@ -39,24 +47,38 @@
 
 <script setup>
 import { reactive } from "vue";
-import { useRouter } from "vue-router"; // 推荐使用 useRouter
-import { Place, User, Iphone, Clock, ArrowRight } from '@element-plus/icons-vue';
-
-const router = useRouter(); // 获取路由实例
+import request from "@/utils/request.js";
+import router from "@/router/index.js";
+import {ElMessage} from "element-plus";
+import { Place, User, Iphone, Clock, ArrowRight, Open } from '@element-plus/icons-vue';
 
 const data = reactive({
-  community: { name: '幸福花园社区' },
-  tableData: [
-    { id: 1, name: 'A区智能回收站', managerName: '张师傅', managerPhone: '13900001111', timeRange: '08:00 - 20:00', status: '运行中', img: 'https://picsum.photos/400/200?1' },
-    { id: 2, name: 'B区集中投放点', managerName: '王阿姨', managerPhone: '13900002222', timeRange: '07:00 - 19:00', status: '运行中', img: 'https://picsum.photos/400/200?2' }
-  ]
+  user: JSON.parse(localStorage.getItem('xm-user') || '{}'),
+  communityId: router.currentRoute.value.query.communityId,
+  tableData: [],
+  community: {}
 })
 
-const goToDetail = (id) => {
-  // 调试：强制跳转到前台详情页
-  router.push({ path: '/front/recoverySiteDetail', query: { id: id } });
+request.get('/community/selectById/' + data.communityId).then(res => {
+  data.community = res.data
+})
+
+const load = () => {
+  request.get('/recoverySite/selectAll', {
+    params: {
+      communityId: data.communityId
+    }
+  }).then(res => {
+    if (res.code === '200') {
+      data.tableData = res.data || []
+    } else {
+      ElMessage.error(res.msg)
+    }
+  })
 }
+load()
 </script>
+
 <style scoped>
 .recovery-site-header {
   text-align: center;

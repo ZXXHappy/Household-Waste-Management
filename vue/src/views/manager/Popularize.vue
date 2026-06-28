@@ -1,42 +1,50 @@
 <template>
   <div>
     <div class="card" style="margin-bottom: 5px">
-      <el-input v-model="data.name" prefix-icon="Search" style="width: 240px; margin-right: 10px" placeholder="请输入回收点名称查询"></el-input>
+      <el-input v-model="data.title" prefix-icon="Search" style="width: 240px; margin-right: 10px" placeholder="请输入宣传标题查询"></el-input>
       <el-button type="info" plain @click="load">查询</el-button>
       <el-button type="warning" plain style="margin: 0 10px" @click="reset">重置</el-button>
     </div>
     <div class="card" style="margin-bottom: 5px">
-      <el-button type="primary" plain @click="handleAdd" v-if="data.user.role === 'COMMUNITY'">新增</el-button>
+      <el-button type="primary" plain @click="handleAdd">新增</el-button>
       <el-button type="danger" plain @click="delBatch">批量删除</el-button>
     </div>
 
     <div class="card" style="margin-bottom: 5px">
-      <el-table stripe :data="data.tableData" @selection-change="handleSelectionChange">
+      <el-table tooltip-effect="dark myTooltip" stripe :data="data.tableData" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" />
-        <el-table-column prop="communityName" label="社区名称"></el-table-column>
-        <el-table-column prop="name" label="投放点名称"></el-table-column>
-        <el-table-column prop="img" label="投放点照片">
+        <el-table-column prop="typeName" label="分类"></el-table-column>
+        <el-table-column prop="title" label="标题" show-overflow-tooltip></el-table-column>
+        <el-table-column prop="descr" label="简介" show-overflow-tooltip></el-table-column>
+        <el-table-column prop="img" label="封面">
           <template #default="scope">
-            <el-image style="width: 80px; height: 50px; border-radius: 5px" :src="scope.row.img" :preview-src-list="[scope.row.img]" preview-teleported></el-image>
+            <el-image style="width: 50px; height: 50px; border-radius: 5px" :src="scope.row.img" :preview-src-list="[scope.row.img]" preview-teleported></el-image>
           </template>
         </el-table-column>
-        <el-table-column prop="timeRange" label="开放时间"></el-table-column>
-        <el-table-column prop="managerName" label="管理员名称"></el-table-column>
-        <el-table-column prop="managerPhone" label="管理员电话"></el-table-column>
-        <el-table-column prop="status" label="回收点状态">
-          <template v-slot="scope">
-            <el-tag type="success" v-if="scope.row.status === '运行中'">运行中</el-tag>
-            <el-tag type="danger" v-if="scope.row.status === '已关闭'">已关闭</el-tag>
+        <el-table-column prop="thumbnail1" label="小图1">
+          <template #default="scope">
+            <el-image style="width: 50px; height: 50px; border-radius: 5px" :src="scope.row.thumbnail1" :preview-src-list="[scope.row.thumbnail1]" preview-teleported></el-image>
           </template>
         </el-table-column>
-        <el-table-column prop="content" label="详情">
+        <el-table-column prop="thumbnail2" label="小图2">
+          <template #default="scope">
+            <el-image style="width: 50px; height: 50px; border-radius: 5px" :src="scope.row.thumbnail2" :preview-src-list="[scope.row.thumbnail2]" preview-teleported></el-image>
+          </template>
+        </el-table-column>
+        <el-table-column prop="thumbnail3" label="小图3">
+          <template #default="scope">
+            <el-image style="width: 50px; height: 50px; border-radius: 5px" :src="scope.row.thumbnail3" :preview-src-list="[scope.row.thumbnail3]" preview-teleported></el-image>
+          </template>
+        </el-table-column>
+        <el-table-column prop="content" label="主体内容">
           <template #default="scope">
             <el-button type="primary" @click="view(scope.row.content)">查看内容</el-button>
           </template>
         </el-table-column>
+        <el-table-column prop="viewCount" label="浏览量"></el-table-column>
         <el-table-column label="操作" width="100" fixed="right">
           <template v-slot="scope">
-            <el-button type="primary" circle :icon="Edit" @click="handleEdit(scope.row)" v-if="data.user.role === 'COMMUNITY'"></el-button>
+            <el-button type="primary" circle :icon="Edit" @click="handleEdit(scope.row)"></el-button>
             <el-button type="danger" circle :icon="Delete" @click="del(scope.row.id)"></el-button>
           </template>
         </el-table-column>
@@ -46,53 +54,60 @@
       <el-pagination @current-change="load" background layout="total, prev, pager, next" :page-size="data.pageSize" v-model:current-page="data.pageNum" :total="data.total" />
     </div>
 
-    <el-dialog title="回收点信息" v-model="data.formVisible" width="50%" destroy-on-close>
-      <el-form ref="formRef" :model="data.form" :rules="data.rules" label-width="100px" style="padding: 20px">
-        <el-form-item prop="communityId" label="社区">
-          <el-select style="width: 100%" v-model="data.form.communityId">
-            <el-option v-for="item in data.communityList" :key="item.id" :value="item.id" :label="item.name"></el-option>
+    <el-dialog title="宣传信息" v-model="data.formVisible" width="50%" destroy-on-close>
+      <el-form ref="form" :model="data.form" label-width="70px" style="padding: 20px">
+        <el-form-item prop="typeId" label="分类">
+          <el-select style="width: 100%" v-model="data.form.typeId">
+            <el-option v-for="item in data.typeList" :key="item.id" :value="item.id" :label="item.name"></el-option>
           </el-select>
         </el-form-item>
-        <el-form-item prop="name" label="投放点名称">
-          <el-input v-model="data.form.name" placeholder="请输入投放点名称"></el-input>
+        <el-form-item prop="title" label="标题">
+          <el-input v-model="data.form.title" placeholder="请输入标题"></el-input>
         </el-form-item>
-        <el-form-item prop="img" label="投放点照片">
+        <el-form-item prop="descr" label="简介">
+          <el-input type="textarea" :rows="3" v-model="data.form.descr" placeholder="请输入简介"></el-input>
+        </el-form-item>
+        <el-form-item prop="img" label="封面">
           <el-upload
               :action="baseUrl + '/files/upload'"
               :headers="{ 'token': data.user.token }"
               :on-success="handleFileUpload"
               list-type="picture"
           >
-            <el-button type="primary">上传</el-button>
+            <el-button type="primary">上传封面</el-button>
           </el-upload>
         </el-form-item>
-        <el-form-item prop="timeRange" label="开放时间">
-          <div style="width: 100%; display: flex; align-items: center; grid-gap: 10px">
-            <el-time-select
-                v-model="data.open"
-                style="flex: 1"
-                start="08:00"
-                step="00:30"
-                end="20:30"
-                placeholder="选择开始时间"
-            />
-            <el-time-select
-                v-model="data.close"
-                style="flex: 1"
-                start="08:30"
-                step="00:30"
-                end="21:00"
-                placeholder="选择结束时间"
-            />
-          </div>
+        <el-form-item prop="thumbnail1" label="小图1">
+          <el-upload
+              :action="baseUrl + '/files/upload'"
+              :headers="{ 'token': data.user.token }"
+              :on-success="handleFileUpload1"
+              list-type="picture"
+          >
+            <el-button type="primary">上传小图1</el-button>
+          </el-upload>
         </el-form-item>
-        <el-form-item prop="status" label="回收点状态">
-          <el-radio-group v-model="data.form.status">
-            <el-radio-button label="运行中" value="运行中"></el-radio-button>
-            <el-radio-button label="已关闭" value="已关闭"></el-radio-button>
-          </el-radio-group>
+        <el-form-item prop="thumbnail2" label="小图2">
+          <el-upload
+              :action="baseUrl + '/files/upload'"
+              :headers="{ 'token': data.user.token }"
+              :on-success="handleFileUpload2"
+              list-type="picture"
+          >
+            <el-button type="primary">上传小图2</el-button>
+          </el-upload>
         </el-form-item>
-        <el-form-item prop="content" label="详情">
+        <el-form-item prop="thumbnail3" label="小图3">
+          <el-upload
+              :action="baseUrl + '/files/upload'"
+              :headers="{ 'token': data.user.token }"
+              :on-success="handleFileUpload3"
+              list-type="picture"
+          >
+            <el-button type="primary">上传小图3</el-button>
+          </el-upload>
+        </el-form-item>
+        <el-form-item prop="content" label="主体内容">
           <div style="border: 1px solid #ccc; width: 100%">
             <Toolbar
                 style="border-bottom: 1px solid #ccc"
@@ -117,7 +132,6 @@
       </template>
     </el-dialog>
 
-
     <el-dialog title="内容" v-model="data.viewVisible" width="50%" :close-on-click-modal="false" destroy-on-close>
       <div class="editor-content-view" style="padding: 20px" v-html="data.content"></div>
       <template #footer>
@@ -126,21 +140,19 @@
     </span>
       </template>
     </el-dialog>
-
   </div>
 </template>
 
 <script setup>
 
-import {reactive, ref} from "vue";
+import {reactive} from "vue";
 import request from "@/utils/request.js";
 import {ElMessage, ElMessageBox} from "element-plus";
 import {Delete, Edit} from "@element-plus/icons-vue";
 import '@wangeditor/editor/dist/css/style.css' // 引入 css
-import {onBeforeUnmount, shallowRef} from "vue";
+import {onBeforeUnmount, ref, shallowRef} from "vue";
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 
-const formRef = ref()
 
 const data = reactive({
   user: JSON.parse(localStorage.getItem('xm-user') || '{}'),
@@ -150,26 +162,35 @@ const data = reactive({
   pageNum: 1,
   pageSize: 10,
   total: 0,
-  name: null,
+  title: null,
   ids: [],
-  communityList: [],
-  open: null,
-  close: null,
-  rules: {
-    communityId: [
-      { required: true, message: '请选择社区', trigger: 'change' }
-    ],
-    name: [
-      { required: true, message: '请设置名称', trigger: 'blur' }
-    ],
-  },
+  typeList: [],
   viewVisible: false,
   content: null
+})
+
+const view = (content) => {
+  data.content = content
+  data.viewVisible = true
+}
+
+request.get('/popularizeType/selectAll').then(res => {
+  data.typeList = res.data
 })
 
 const baseUrl = import.meta.env.VITE_BASE_URL
 const handleFileUpload = (res) => {
   data.form.img = res.data
+}
+
+const handleFileUpload1 = (res) => {
+  data.form.thumbnail1 = res.data
+}
+const handleFileUpload2 = (res) => {
+  data.form.thumbnail2 = res.data
+}
+const handleFileUpload3 = (res) => {
+  data.form.thumbnail3 = res.data
 }
 
 /* wangEditor5 初始化开始 */
@@ -196,23 +217,12 @@ const handleCreated = (editor) => {
 }
 /* wangEditor5 初始化结束 */
 
-const view = (content) => {
-  data.content = content
-  data.viewVisible = true
-}
-
-
-request.get('/community/selectAll').then(res => {
-  data.communityList = res.data.filter(v => v.managerId === data.user.id)
-  console.log(data.communityList)
-})
-
 const load = () => {
-  request.get('/recoverySite/selectPage', {
+  request.get('/popularize/selectPage', {
     params: {
       pageNum: data.pageNum,
       pageSize: data.pageSize,
-      name: data.name
+      title: data.title
     }
   }).then(res => {
     if (res.code === '200') {
@@ -225,18 +235,14 @@ const load = () => {
 }
 const handleAdd = () => {
   data.form = {}
-  data.open = null
-  data.close = null
   data.formVisible = true
 }
 const handleEdit = (row) => {
   data.form = JSON.parse(JSON.stringify(row))
-  data.open = data.form.timeRange.substring(0, 5)
-  data.close = data.form.timeRange.substring(8, 13)
   data.formVisible = true
 }
 const add = () => {
-  request.post('/recoverySite/add', data.form).then(res => {
+  request.post('/popularize/add', data.form).then(res => {
     if (res.code === '200') {
       ElMessage.success('操作成功')
       data.formVisible = false
@@ -248,7 +254,7 @@ const add = () => {
 }
 
 const update = () => {
-  request.put('/recoverySite/update', data.form).then(res => {
+  request.put('/popularize/update', data.form).then(res => {
     if (res.code === '200') {
       ElMessage.success('操作成功')
       data.formVisible = false
@@ -260,25 +266,12 @@ const update = () => {
 }
 
 const save = () => {
-  formRef.value.validate((valid) => {
-    if (valid) {
-      if (!data.open) {
-        ElMessage.warning('请选择开始时间')
-        return
-      }
-      if (!data.close) {
-        ElMessage.warning('请选择结束时间')
-        return
-      }
-      data.form.timeRange = data.open + ' - ' + data.close
-      data.form.id ? update() : add()
-    }
-  })
+  data.form.id ? update() : add()
 }
 
 const del = (id) => {
   ElMessageBox.confirm('删除后数据无法恢复，您确定删除吗？', '删除确认', { type: 'warning' }).then(res => {
-    request.delete('/recoverySite/delete/' + id).then(res => {
+    request.delete('/popularize/delete/' + id).then(res => {
       if (res.code === '200') {
         ElMessage.success("删除成功")
         load()
@@ -296,7 +289,7 @@ const delBatch = () => {
     return
   }
   ElMessageBox.confirm('删除后数据无法恢复，您确定删除吗？', '删除确认', { type: 'warning' }).then(res => {
-    request.delete("/recoverySite/delete/batch", {data: data.ids}).then(res => {
+    request.delete("/popularize/delete/batch", {data: data.ids}).then(res => {
       if (res.code === '200') {
         ElMessage.success('操作成功')
         load()
@@ -313,9 +306,15 @@ const handleSelectionChange = (rows) => {
 }
 
 const reset = () => {
-  data.name = null
+  data.title = null
   load()
 }
 
 load()
 </script>
+
+<style>
+.myTooltip {
+  max-width: 40% !important;
+}
+</style>

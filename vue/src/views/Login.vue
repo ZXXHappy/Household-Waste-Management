@@ -2,15 +2,15 @@
   <div class="login-container">
     <div class="login-box">
       <div style="font-weight: bold; font-size: 24px; text-align: center; margin-bottom: 30px; color: #65b57a">欢 迎 登 录</div>
-      <el-form :model="data.form">
-        <el-form-item>
+      <el-form ref="formRef" :model="data.form" :rules="data.rules">
+        <el-form-item prop="username">
           <el-input :prefix-icon="User" size="large" v-model="data.form.username" placeholder="请输入账号"></el-input>
         </el-form-item>
-        <el-form-item>
+        <el-form-item prop="password">
           <el-input show-password :prefix-icon="Lock" size="large" v-model="data.form.password" placeholder="请输入密码"></el-input>
         </el-form-item>
-        <el-form-item>
-          <el-select size="large" v-model="data.form.role" style="width: 100%">
+        <el-form-item prop="role">
+          <el-select size="large" v-model="data.form.role">
             <el-option value="USER" label="普通用户"></el-option>
             <el-option value="COMMUNITY" label="社区管理员"></el-option>
             <el-option value="ADMIN" label="超级管理员"></el-option>
@@ -28,39 +28,49 @@
 </template>
 
 <script setup>
-import { reactive } from "vue";
+import { reactive, ref } from "vue";
 import { User, Lock } from "@element-plus/icons-vue";
-import router from "@/router/index.js"; // 2. 重新引入路由组件
+import request from "@/utils/request.js";
+import {ElMessage} from "element-plus";
+import router from "@/router/index.js";
 
 const data = reactive({
-  form: {
-    username: '',
-    password: '',
-    role: 'USER'
+  dialogVisible: true,
+  form: { role: 'USER' },
+  rules: {
+    username: [
+      { required: true, message: '请输入账号', trigger: 'blur' }
+    ],
+    password: [
+      { required: true, message: '请输入密码', trigger: 'blur' }
+    ]
   }
 })
 
-// 3. 编写纯前端跳转逻辑（跳过后端接口请求）
-const login = () => {
-  // 模拟存储一个假的登录用户数据到缓存，防止 Home 页面有权限拦截
-  localStorage.setItem('xm-user', JSON.stringify({ username: data.form.username || 'test', role: data.form.role }))
+const formRef = ref()
 
-  // 直接根据当前选中的角色进行页面跳转
-  if (data.form.role === 'USER') {
-    router.push('/front/home')
-  } else if (data.form.role === 'ADMIN') {
-    router.push('/manager/home')
-  } else if (data.form.role === 'COMMUNITY') {
-    router.push('/manager/home')
-  }
+const login = () => {
+  formRef.value.validate(valid => {
+    if (valid) { // 表示表单校验通过
+      request.post('/login', data.form).then(res => {
+        if (res.code === '200') {
+          ElMessage.success('登录成功')
+          // 存储用户信息到浏览器的缓存
+          localStorage.setItem('xm-user', JSON.stringify(res.data))
+          if (res.data.role === 'USER') {
+            router.push('/front/home')
+          } else if (res.data.role === 'ADMIN') {
+            router.push('/manager/statistics')
+          } else if (res.data.role === 'COMMUNITY') {
+            router.push('/manager/home')
+          }
+        } else {
+          ElMessage.error(res.msg)
+        }
+      })
+    }
+  })
 }
-// 在登录逻辑或者项目启动时，写入这行数据
-localStorage.setItem('xm-user', JSON.stringify({
-  id: 1,
-  name: '测试用户',
-  role: 'USER',
-  avatar: 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png' // 随便一张图片地址
-}));
 </script>
 
 <style scoped>
